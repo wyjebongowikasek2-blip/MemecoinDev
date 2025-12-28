@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MemeDev</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:'Courier New',monospace;
+background:radial-gradient(circle at top,#0f3d2e,#000);
+color:#9effc7;
+overflow:hidden;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+/* TICKER */
+.ticker{
+position:absolute;
+top:0;
+width:100%;
+background:#000;
+border-bottom:1px solid #2aff7a;
+overflow:hidden;
+white-space:nowrap;
+}
+.ticker span{
+display:inline-block;
+padding-left:100%;
+animation:ticker 14s linear infinite;
+font-weight:bold;
+color:#2aff7a;
+}
+@keyframes ticker{
+0%{transform:translateX(0)}
+100%{transform:translateX(-100%)}
+}
+
+/* COINS */
+.coin{
+position:absolute;
+width:14px;
+height:14px;
+border-radius:50%;
+background:#2aff7a;
+opacity:.6;
+animation:fall linear infinite;
+}
+@keyframes fall{
+0%{transform:translateY(-10vh)}
+100%{transform:translateY(110vh)}
+}
+
+/* CARD */
+.card{
+position:relative;
+background:rgba(0,0,0,.8);
+border:2px solid #2aff7a;
+border-radius:16px;
+padding:28px;
+width:360px;
+text-align:center;
+box-shadow:0 0 30px #00ff88;
+z-index:2;
+}
+.avatar{
+width:120px;
+height:120px;
+border-radius:50%;
+border:3px solid #2aff7a;
+object-fit:cover;
+box-shadow:0 0 15px #00ff88;
+}
+h1{margin:10px 0;font-size:28px}
+.bio{margin:12px 0;font-size:14px}
+
+.prices{
+margin:12px 0;
+font-size:14px;
+border:1px solid #2aff7a;
+border-radius:8px;
+padding:10px;
+background:rgba(0,0,0,.6);
+}
+
+/* CHART */
+.charts{
+margin-top:10px;
+}
+canvas{
+width:100%;
+height:60px;
+background:#000;
+border:1px solid #2aff7a;
+border-radius:6px;
+margin-top:6px;
+}
+
+.links a{
+display:block;
+margin:10px 0;
+padding:10px;
+background:#2aff7a;
+color:#000;
+border-radius:8px;
+text-decoration:none;
+font-weight:bold;
+transition:.2s;
+}
+.links a:hover{
+background:#00ff88;
+box-shadow:0 0 10px #00ff88;
+}
+.footer{font-size:11px;opacity:.7;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="ticker">
+<span id="tickerText">LOADING PRICES...</span>
+</div>
+
+<script>
+for(let i=0;i<26;i++){
+let c=document.createElement("div");
+c.className="coin";
+c.style.left=Math.random()*100+"vw";
+c.style.animationDuration=6+Math.random()*10+"s";
+document.body.appendChild(c);
+}
+</script>
+
+<div class="card">
+<img class="avatar" src="Zrzut ekranu_28-12-2025_03657_www.bing.com.jpeg">
+<h1>MemeDev</h1>
+
+<div class="bio">
+Probably deploying another memecoin right now 🐸<br>
+Solidity • Chaos • Memes
+</div>
+
+<div class="prices" id="prices">Fetching live prices...</div>
+
+<div class="charts">
+<canvas id="ethChart"></canvas>
+<canvas id="solChart"></canvas>
+</div>
+
+<div class="links">
+<a href="https://x.com/wyjebongow95561" target="_blank">X / Twitter</a>
+</div>
+
+<div class="footer">built in the swamp 🐸</div>
+</div>
+
+<script>
+async function fetchPrices(){
+const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana&vs_currencies=usd&include_24hr_change=true");
+const d = await res.json();
+document.getElementById("prices").innerHTML =
+"ETH: $" + d.ethereum.usd + " (" + d.ethereum.usd_24h_change.toFixed(2) + "%)<br>" +
+"SOL: $" + d.solana.usd + " (" + d.solana.usd_24h_change.toFixed(2) + "%)";
+document.getElementById("tickerText").innerHTML =
+"ETH $" + d.ethereum.usd + " • SOL $" + d.solana.usd + " • DEPLOYING MEMECOINS •";
+}
+
+async function drawChart(id, coin){
+const res = await fetch(
+`https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=1&interval=hourly`
+);
+const data = await res.json();
+const prices = data.prices.map(p=>p[1]);
+const c = document.getElementById(id);
+const ctx = c.getContext("2d");
+c.width = c.offsetWidth;
+c.height = c.offsetHeight;
+
+const min = Math.min(...prices);
+const max = Math.max(...prices);
+ctx.strokeStyle="#2aff7a";
+ctx.lineWidth=2;
+ctx.beginPath();
+prices.forEach((p,i)=>{
+const x = i*(c.width/(prices.length-1));
+const y = c.height - ((p-min)/(max-min))*c.height;
+if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+});
+ctx.stroke();
+}
+
+fetchPrices();
+drawChart("ethChart","ethereum");
+drawChart("solChart","solana");
+setInterval(fetchPrices,60000);
+</script>
+
+</body>
+</html>
